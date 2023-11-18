@@ -1,8 +1,5 @@
-all: bchoc
-
-bchoc: bchoc.py
-    chmod +x bchoc.py
-    ln -sf bchoc.py bchoc
-
+all:
+	cp bchoc.py bchoc
+	chmod +x bchoc
 clean:
-    rm -f bchoc
+	rm bchoc

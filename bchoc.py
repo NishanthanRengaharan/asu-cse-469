@@ -277,8 +277,42 @@ def main():
             sys.exit(1)
 
     elif args.command == 'remove':
-        # Implement remove logic
-        pass
+        if not args.case_id or not args.item_id or not validate_uuid(args.case_id):
+            print("Invalid case ID or item ID")
+            sys.exit(1)
+
+        # Check if blockchain has been initialized
+        if blockchain is None:
+            print("Blockchain not initialized. Cannot perform removal.")
+            sys.exit(1)
+
+        item_id = args.item_id[0]  # Assuming only one item is removed at a time
+        prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
+
+        removal_reason = args.why.encode('utf-8') if args.why else b''  # Assuming 'why' is an optional reason for removal
+
+        remove_block = Block(
+            prev_hash=prev_hash,
+            timestamp=time.time(),
+            case_id=args.case_id,
+            item_id=item_id,
+            state='REMOVED',
+            handler=args.handler,
+            organization=args.organization,
+            data=removal_reason
+        )
+
+        if not blockchain.add_block(remove_block):
+            print(f"Item ID {item_id} is not checked in or does not exist in the blockchain")
+            sys.exit(1)
+
+        timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(remove_block.timestamp))
+        print(f"Case: {args.case_id}")
+        print(f"Removed item: {item_id}")
+        print(f"Status: REMOVED")
+        if args.why:
+            print(f"Removal Reason: {args.why}")
+        print(f"Time of action: {timestamp_iso}")
 
     elif args.command == 'init':
     # Attempt to load the blockchain from file

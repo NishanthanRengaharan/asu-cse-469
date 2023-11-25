@@ -69,7 +69,7 @@ class Blockchain:
     def save_to_file(self, filename):
         temp_filename = filename + '.temp'
         with open(temp_filename, 'wb') as file:
-            pickle.dump(self, file)
+            pickle.dump(self, file, protocol=pickle.HIGHEST_PROTOCOL)
         os.rename(temp_filename, filename)
 
     @staticmethod
@@ -79,9 +79,9 @@ class Blockchain:
                 return pickle.load(file)
         except FileNotFoundError:
             return None
-        except Exception as e:
+        except pickle.UnpicklingError as e:
             print(f"Error loading blockchain from file: {e}")
-            return Blockchain()
+            sys.exit(1)
     
     def show_cases(self):
         cases = set()
@@ -231,7 +231,7 @@ def main():
                 timestamp=0,
                 case_id=UUID('00000000-0000-0000-0000-000000000000').hex,
                 item_id='',
-                state=b'INITIAL\x00\x00\x00\x00',
+                state=b'INITIAL' + b'\x00' * (12 - len('INITIAL')),  # Ensure the state is 12 bytes.
                 handler=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
                 organization=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
                 data=b'Initial block\x00'

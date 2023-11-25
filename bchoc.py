@@ -186,12 +186,72 @@ def main():
             print(f"Time of action: {timestamp_iso}")
 
     elif args.command == 'checkout':
+        if not args.case_id or not args.item_id or not validate_uuid(args.case_id):
+            print("Invalid case ID or item ID")
+            sys.exit(1)
+
+        # Check if blockchain has been initialized
+        if blockchain is None:
+            print("Blockchain not initialized. Cannot perform checkout.")
+            sys.exit(1)
+
         # Implement checkout logic
-        pass
+        item_id = args.item_id[0]  # Assuming only one item is checked out at a time
+        prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
+
+        checkout_block = Block(
+            prev_hash=prev_hash,
+            timestamp=time.time(),
+            case_id=args.case_id,
+            item_id=item_id,
+            state='CHECKEDOUT',
+            handler=args.handler,
+            organization=args.organization
+        )
+
+        if not blockchain.add_block(checkout_block):
+            print(f"Item ID {item_id} is already checked out or does not exist in the blockchain")
+            sys.exit(1)
+
+        timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(checkout_block.timestamp))
+        print(f"Case: {args.case_id}")
+        print(f"Checked out item: {item_id}")
+        print(f"Status: CHECKEDOUT")
+        print(f"Time of action: {timestamp_iso}")
 
     elif args.command == 'checkin':
+        if not args.case_id or not args.item_id or not validate_uuid(args.case_id):
+            print("Invalid case ID or item ID")
+            sys.exit(1)
+
+        # Check if blockchain has been initialized
+        if blockchain is None:
+            print("Blockchain not initialized. Cannot perform checkin.")
+            sys.exit(1)
+
         # Implement checkin logic
-        pass
+        item_id = args.item_id[0]  # Assuming only one item is checked in at a time
+        prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
+
+        checkin_block = Block(
+            prev_hash=prev_hash,
+            timestamp=time.time(),
+            case_id=args.case_id,
+            item_id=item_id,
+            state='CHECKEDIN',
+            handler=args.handler,
+            organization=args.organization
+        )
+
+        if not blockchain.add_block(checkin_block):
+            print(f"Item ID {item_id} is not checked out or does not exist in the blockchain")
+            sys.exit(1)
+
+        timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(checkin_block.timestamp))
+        print(f"Case: {args.case_id}")
+        print(f"Checked in item: {item_id}")
+        print(f"Status: CHECKEDIN")
+        print(f"Time of action: {timestamp_iso}")
 
     elif args.command == 'show':
         if args.case_id:

@@ -14,11 +14,11 @@ class Block:
         self.prev_hash = prev_hash if prev_hash is not None else b'\x00' * 32
         self.timestamp = timestamp
         self.case_id = UUID(case_id).bytes if case_id is not None else b'\x00' * 16
-        self.item_id = item_id.encode('utf-8') if item_id is not None else b''
-        self.state = state.encode('utf-8') if state is not None else b''
-        self.handler = handler.encode('utf-8') if handler is not None else b''
-        self.organization = organization.encode('utf-8') if organization is not None else b''
-        self.data = data.encode('utf-8') if data is not None else b''
+        self.item_id = item_id.encode('utf-8') if item_id is not None and not isinstance(item_id, bytes) else item_id
+        self.state = state.encode('utf-8') if state is not None and not isinstance(state, bytes) else state
+        self.handler = handler.encode('utf-8') if handler is not None and not isinstance(handler, bytes) else handler
+        self.organization = organization.encode('utf-8') if organization is not None and not isinstance(organization, bytes) else organization
+        self.data = data.encode('utf-8') if data is not None and not isinstance(data, bytes) else data
 
         self.hash = self.calculate_hash()
 
@@ -67,8 +67,10 @@ class Blockchain:
         return True
 
     def save_to_file(self, filename):
-        with open(filename, 'wb') as file:
+        temp_filename = filename + '.temp'
+        with open(temp_filename, 'wb') as file:
             pickle.dump(self, file)
+        os.rename(temp_filename, filename)
 
     @staticmethod
     def load_from_file(filename):
@@ -77,6 +79,43 @@ class Blockchain:
                 return pickle.load(file)
         except FileNotFoundError:
             return None
+        except Exception as e:
+            print(f"Error loading blockchain from file: {e}")
+            return Blockchain()
+    
+    def show_cases(self):
+        cases = set()
+        for block in self.chain:
+            if block.case_id:
+                cases.add(UUID(bytes=block.case_id).hex)
+        return cases
+
+    def show_items_for_case(self, case_id):
+        items = set()
+        for block in self.chain:
+            if UUID(bytes=block.case_id).hex == case_id and block.item_id:
+                items.add(block.item_id.decode('utf-8'))
+        return items
+
+    def show_history(self, case_id=None, item_id=None, num_entries=None):
+        entries = []
+        count = 0
+        for block in reversed(self.chain):
+            if case_id and UUID(bytes=block.case_id).hex != case_id:
+                continue
+            if item_id and block.item_id.decode('utf-8') != item_id:
+                continue
+            entry = {
+                'Case': UUID(bytes=block.case_id).hex,
+                'Item': block.item_id.decode('utf-8'),
+                'Action': block.state.decode('utf-8'),
+                'Time': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(block.timestamp))
+            }
+            entries.append(entry)
+            count += 1
+            if num_entries and count >= num_entries:
+                break
+        return entries
 
 # Helper functions
 def validate_uuid(uuid_string):
@@ -106,17 +145,45 @@ def main():
         if not args.case_id or not args.item_id or not validate_uuid(args.case_id):
             print("Invalid case ID or item ID")
             sys.exit(1)
+
+        # Check if blockchain has been initialized, if not, initialize it
+        if blockchain is None:
+            print("Blockchain not initialized. Creating INITIAL block.")
+            blockchain = Blockchain()
+            initial_block = Block(
+                prev_hash=None,
+                timestamp=0,
+                case_id=UUID('00000000-0000-0000-0000-000000000000').hex,
+                item_id='',
+                state=b'INITIAL\x00\x00\x00\x00',
+                handler=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+                organization=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+                data=b'Initial block\x00'
+            )
+            blockchain.add_block(initial_block)
+
         for item_id in args.item_id:
-            block = Block(blockchain.chain[-1].hash if blockchain.chain else None, time.time(), args.case_id, item_id, 'CHECKEDIN', args.handler, args.organization)
+            prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
+
+            block = Block(
+                prev_hash=prev_hash,
+                timestamp=time.time(),
+                case_id=args.case_id,
+                item_id=item_id,
+                state='CHECKEDIN',
+                handler=args.handler,
+                organization=args.organization
+            )
+
             if not blockchain.add_block(block):
                 print(f"Item ID {item_id} already exists in the blockchain")
                 sys.exit(1)
-            
+
             timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(block.timestamp))
             print(f"Case: {args.case_id}")
             print(f"Added item: {item_id}")
-            print(f"  Status: CHECKEDIN")
-            print(f"  Time of action: {timestamp_iso}")
+            print(f"Status: CHECKEDIN")
+            print(f"Time of action: {timestamp_iso}")
 
     elif args.command == 'checkout':
         # Implement checkout logic
@@ -127,8 +194,27 @@ def main():
         pass
 
     elif args.command == 'show':
-        # Implement show logic
-        pass
+        if args.case_id:
+            items = blockchain.show_items_for_case(args.case_id)
+            for item in items:
+                print(item)
+        else:
+            cases = blockchain.show_cases()
+            for case in cases:
+                print(case)
+
+    elif args.command == 'show history':
+        if args.case_id or args.item_id or args.num_entries:
+            history_entries = blockchain.show_history(args.case_id, args.item_id, args.num_entries)
+            for entry in history_entries:
+                print(f"Case: {entry['Case']}")
+                print(f"Item: {entry['Item']}")
+                print(f"Action: {entry['Action']}")
+                print(f"Time: {entry['Time']}")
+                print()
+        else:
+            print("Invalid arguments for show history command. Provide at least one of -c, -i, or -n.")
+            sys.exit(1)
 
     elif args.command == 'remove':
         # Implement remove logic
@@ -140,7 +226,17 @@ def main():
         if blockchain is None:  # blockchain should be None if the file does not exist
             print("Blockchain file not found. Created INITIAL block.")
             blockchain = Blockchain()
-            initial_block = Block(prev_hash=None, timestamp=time.time(), case_id=None, item_id=None, state='INITIAL', handler=None, organization=None, data='Initial block')
+            initial_block = Block(
+                prev_hash=None,
+                timestamp=0,
+                case_id=UUID('00000000-0000-0000-0000-000000000000').hex,
+                item_id='',
+                state=b'INITIAL\x00\x00\x00\x00',
+                handler=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+                organization=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+                data=b'Initial block\x00'
+            )
+
             blockchain.add_block(initial_block)
             blockchain.save_to_file(blockchain_file_path)
         else:

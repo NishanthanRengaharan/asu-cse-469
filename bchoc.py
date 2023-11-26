@@ -212,6 +212,10 @@ def main():
             print("Removal reason is required. Please provide the '-y' or '--why' argument.")
             sys.exit(1)
 
+        if args.why == "RELEASED" and not args.organization:
+            print("Removal reason - RELEASED requires organization.")
+            sys.exit(1)
+
         item_id = args.item_id[0]  # Assuming only one item is removed at a time
 
         last_state_block = blockchain.get_last_state(item_id)

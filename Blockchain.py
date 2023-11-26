@@ -94,6 +94,6 @@ class Blockchain:
 
     def get_last_state(self, item_id):
             for block in reversed(self.chain):
-                if block.item_id.decode('utf-8') if block.item_id else None == item_id:
+                if block.item_id.decode('utf-8') == item_id:
                     return block
             return None

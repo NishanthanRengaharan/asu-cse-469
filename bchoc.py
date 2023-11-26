@@ -116,11 +116,10 @@ def main():
             timestamp=time.time(),
             case_id=UUID(bytes=last_state_block.case_id).hex if last_state_block.case_id else None,
             item_id=item_id,
-            state=b'CHECKEDOUT',
+            state='CHECKEDOUT',
             handler=args.handler,
             organization=args.organization
         )
-
 
         blockchain.chain.append(checkout_block)
         blockchain.item_ids.add(checkout_block.item_id)
@@ -129,7 +128,6 @@ def main():
         print(f"Checked out item: {item_id}")
         print(f"Status: CHECKEDOUT")
         print(f"Time of action: {timestamp_iso}")
-
 
     elif args.command == 'checkin':
         if not args.item_id or not args.handler or not args.organization:
@@ -208,33 +206,28 @@ def main():
         if blockchain is None:
             print("Blockchain not initialized. Cannot perform removal.")
             sys.exit(1)
-
-        item_id = args.item_id[0]  # Assuming only one item is removed at a time
-
-        # Check if the item is checked in
-        is_checked_in = False
-        for block in blockchain.chain[::-1]:
-            if block.item_id == item_id and block.state == 'CHECKEDIN':
-                is_checked_in = True
-                break
-
-        if not is_checked_in:
-            print(f"Item ID {item_id} is not checked in or does not exist in the blockchain")
-            sys.exit(1)
-
-        prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
-
+        
         # Ensure 'why' is provided as it is not optional
         if not args.why:
             print("Removal reason is required. Please provide the '-y' or '--why' argument.")
             sys.exit(1)
+
+        item_id = args.item_id[0]  # Assuming only one item is removed at a time
+
+        last_state_block = blockchain.get_last_state(item_id)
+
+        if last_state_block.state.decode('utf-8') != 'CHECKEDIN':
+            print(f"Item ID {item_id} must be checked in before performing remove.")
+            sys.exit(1)
+
+        prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
 
         removal_reason = args.why.encode('utf-8')
 
         remove_block = Block(
             prev_hash=prev_hash,
             timestamp=time.time(),
-            case_id=args.case_id,
+            case_id=UUID(bytes=last_state_block.case_id).hex if last_state_block.case_id else None,
             item_id=item_id,
             state='REMOVED',
             handler=args.handler,
@@ -242,19 +235,19 @@ def main():
             data=removal_reason
         )
 
-        if not blockchain.add_block(remove_block):
-            print(f"Not able to remove Item ID {item_id}")
-            sys.exit(1)
+
+        blockchain.chain.append(remove_block)
+        blockchain.item_ids.add(remove_block.item_id)
 
         timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(remove_block.timestamp))
-        print(f"Case: {args.case_id}")
+        print(f"Case: {UUID(bytes=last_state_block.case_id).hex if last_state_block.case_id else None}")
         print(f"Removed item: {item_id}")
         print(f"Status: REMOVED")
         print(f"Removal Reason: {args.why}")
         print(f"Time of action: {timestamp_iso}")
 
         # Exit with code 0 after successful removal
-        sys.exit(0)
+        # sys.exit(0)
 
     elif args.command == 'init':
     # Attempt to load the blockchain from file

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# bchoc.py
 import argparse
 import os
 import struct
@@ -8,114 +9,12 @@ import pickle
 import time
 import sys
 from uuid import UUID
+from Block import Block
+from Blockchain import Blockchain
 
-class Block:
-    def __init__(self, prev_hash, timestamp, case_id, item_id, state, handler, organization, data=''):
-        self.prev_hash = prev_hash if prev_hash is not None else b'\x00' * 32
-        self.timestamp = timestamp
-        self.case_id = UUID(case_id).bytes if case_id is not None else b'\x00' * 16
-        self.item_id = item_id.encode('utf-8') if item_id is not None and not isinstance(item_id, bytes) else item_id
-        self.state = state.encode('utf-8') if state is not None and not isinstance(state, bytes) else state
-        self.handler = handler.encode('utf-8') if handler is not None and not isinstance(handler, bytes) else handler
-        self.organization = organization.encode('utf-8') if organization is not None and not isinstance(organization, bytes) else organization
-        self.data = data.encode('utf-8') if data is not None and not isinstance(data, bytes) else data
-
-        self.hash = self.calculate_hash()
-
-    def calculate_hash(self):
-        # Make sure all string arguments are converted to bytes
-        prev_hash_bytes = self.prev_hash if isinstance(self.prev_hash, bytes) else str(self.prev_hash).encode()
-        case_id_bytes = self.case_id if isinstance(self.case_id, bytes) else str(self.case_id).encode()
-        state_bytes = self.state if isinstance(self.state, bytes) else str(self.state).encode()
-        handler_bytes = self.handler if isinstance(self.handler, bytes) else str(self.handler).encode()
-        organization_bytes = self.organization if isinstance(self.organization, bytes) else str(self.organization).encode()
-
-        header = struct.pack(
-            "32s d 16s I 12s 20s 20s I",
-            prev_hash_bytes,
-            self.timestamp,
-            case_id_bytes,
-            len(self.item_id),
-            state_bytes,
-            handler_bytes,
-            organization_bytes,
-            len(self.data)
-        )
-        return hashlib.sha256(header + self.data).hexdigest()
 
 # Define the Blockchain class
-class Blockchain:
-    def __init__(self):
-        self.chain = []
-        self.item_ids = set()
 
-    def add_block(self, block):
-        if block.item_id not in self.item_ids or block.state == b'INITIAL':
-            self.chain.append(block)
-            self.item_ids.add(block.item_id)
-            return True
-        return False
-
-    def verify_chain(self):
-        for i in range(1, len(self.chain)):
-            current_block = self.chain[i]
-            previous_block = self.chain[i - 1]
-            if current_block.prev_hash != bytes.fromhex(previous_block.hash):
-                return False
-            if current_block.hash != current_block.calculate_hash():
-                return False
-        return True
-
-    def save_to_file(self, filename):
-        temp_filename = filename + '.temp'
-        with open(temp_filename, 'wb') as file:
-            pickle.dump(self, file, protocol=pickle.HIGHEST_PROTOCOL)
-        os.rename(temp_filename, filename)
-
-    @staticmethod
-    def load_from_file(filename):
-        try:
-            with open(filename, 'rb') as file:
-                return pickle.load(file)
-        except FileNotFoundError:
-            return None
-        except pickle.UnpicklingError as e:
-            print(f"Error loading blockchain from file: {e}")
-            sys.exit(1)
-    
-    def show_cases(self):
-        cases = set()
-        for block in self.chain:
-            if block.case_id:
-                cases.add(UUID(bytes=block.case_id).hex)
-        return cases
-
-    def show_items_for_case(self, case_id):
-        items = set()
-        for block in self.chain:
-            if UUID(bytes=block.case_id).hex == case_id and block.item_id:
-                items.add(block.item_id.decode('utf-8'))
-        return items
-
-    def show_history(self, case_id=None, item_id=None, num_entries=None):
-        entries = []
-        count = 0
-        for block in reversed(self.chain):
-            if case_id and UUID(bytes=block.case_id).hex != case_id:
-                continue
-            if item_id and block.item_id.decode('utf-8') != item_id:
-                continue
-            entry = {
-                'Case': UUID(bytes=block.case_id).hex,
-                'Item': block.item_id.decode('utf-8'),
-                'Action': block.state.decode('utf-8'),
-                'Time': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(block.timestamp))
-            }
-            entries.append(entry)
-            count += 1
-            if num_entries and count >= num_entries:
-                break
-        return entries
 
 # Helper functions
 def validate_uuid(uuid_string):

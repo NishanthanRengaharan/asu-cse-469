@@ -48,7 +48,7 @@ class Blockchain:
     def show_cases(self):
         cases = set()
         for block in self.chain:
-            if block.case_id:
+            if block.case_id and  UUID(bytes=block.case_id).hex != '00000000000000000000000000000000':
                 cases.add(UUID(bytes=block.case_id).hex)
         return cases
 

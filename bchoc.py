@@ -28,8 +28,8 @@ def main():
     parser = argparse.ArgumentParser(description="Blockchain-based Chain of Custody", add_help=False)
     parser.add_argument('command', choices=['add', 'checkout', 'checkin', 'show', 'remove', 'init', 'verify'])
     parser.add_argument('subcommand', nargs='?', choices=['cases', 'items', 'history'])
-    parser.add_argument('-c', '--case_id', help="Specifies the case identifier")
-    parser.add_argument('-i', '--item_id', action='append', help="Specifies the evidence item's identifier")
+    parser.add_argument('-c', '--case_id', nargs='?', help="Specifies the case identifier")
+    parser.add_argument('-i', '--item_id', nargs='?', action='append', help="Specifies the evidence item's identifier")
     parser.add_argument('-h', '--handler', help="Specifies the handler's name")
     parser.add_argument('-H', '--help', action='help', help='Show this help message and exit')
     parser.add_argument('-o', '--organization', help="Organization name")
@@ -87,8 +87,8 @@ def main():
             print(f"Time of action: {timestamp_iso}")
 
     elif args.command == 'checkout':
-        if not args.case_id or not args.item_id or not validate_uuid(args.case_id):
-            print("Invalid case ID or item ID")
+        if not args.item_id:
+            print("Invalid item ID")
             sys.exit(1)
 
         # Check if blockchain has been initialized
@@ -96,29 +96,44 @@ def main():
             print("Blockchain not initialized. Cannot perform checkout.")
             sys.exit(1)
 
-        # Implement checkout logic
         item_id = args.item_id[0]  # Assuming only one item is checked out at a time
-        prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
 
-        checkout_block = Block(
-            prev_hash=prev_hash,
-            timestamp=time.time(),
-            case_id=args.case_id,
-            item_id=item_id,
-            state='CHECKEDOUT',
-            handler=args.handler,
-            organization=args.organization
-        )
+        # Iterate through the blockchain in reverse to find the last state of the item ID
+        last_state = None
+        for block in reversed(blockchain.chain):
+            if block.item_id == item_id:
+                last_state = block.state
+                break
 
-        if not blockchain.add_block(checkout_block):
-            print(f"Item ID {item_id} is already checked out or does not exist in the blockchain")
+        if last_state == 'CHECKEDIN':
+            prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
+
+            checkout_block = Block(
+                prev_hash=prev_hash,
+                timestamp=time.time(),
+                case_id=None,  # Since checkout doesn't require case_id
+                item_id=item_id,
+                state='CHECKEDOUT',
+                handler=args.handler,
+                organization=args.organization
+            )
+
+            if not blockchain.add_block(checkout_block):
+                print(f"Item ID {item_id} is already checked out or does not exist in the blockchain")
+                sys.exit(1)
+
+            timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(checkout_block.timestamp))
+            print(f"Checked out item: {item_id}")
+            print(f"Status: CHECKEDOUT")
+            print(f"Time of action: {timestamp_iso}")
+
+        elif last_state in ['CHECKEDOUT', 'REMOVED', 'DESTROYED', 'DISPOSED']:
+            print(f"Cannot perform action. Item ID {item_id} has been {last_state.lower()}")
             sys.exit(1)
 
-        timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(checkout_block.timestamp))
-        print(f"Case: {args.case_id}")
-        print(f"Checked out item: {item_id}")
-        print(f"Status: CHECKEDOUT")
-        print(f"Time of action: {timestamp_iso}")
+        else:
+            print(f"Item ID {item_id} is not checked in or does not exist in the blockchain")
+            sys.exit(1)
 
     elif args.command == 'checkin':
         if not args.case_id or not args.item_id or not validate_uuid(args.case_id):
@@ -169,11 +184,11 @@ def main():
             print(item)
 
     elif args.command == 'show' and args.subcommand == 'history':
-        if not args.case_id and not args.item_id:
-            print("At least one of -c or -i is required for the show history command.")
-            sys.exit(1)
+        # if not args.case_id and not args.item_id:
+        #     print("At least one of -c or -i is required for the show history command.")
+        #     sys.exit(1)
 
-        history_entries = blockchain.show_history(args.case_id, args.item_id, args.num_entries)
+        history_entries = blockchain.show_history(case_id=args.case_id, item_id=args.item_id, num_entries=args.num_entries)
         for entry in history_entries:
             print(f"Case: {entry['Case']}")
             print(f"Item: {entry['Item']}")
@@ -183,8 +198,8 @@ def main():
 
 
     elif args.command == 'remove':
-        if not args.case_id or not args.item_id or not validate_uuid(args.case_id):
-            print("Invalid case ID or item ID")
+        if not args.item_id:
+            print("Invalid item ID")
             sys.exit(1)
 
         # Check if blockchain has been initialized
@@ -193,6 +208,18 @@ def main():
             sys.exit(1)
 
         item_id = args.item_id[0]  # Assuming only one item is removed at a time
+
+        # Check if the item is checked in
+        is_checked_in = False
+        for block in blockchain.chain[::-1]:
+            if block.item_id == item_id and block.state == 'CHECKEDIN':
+                is_checked_in = True
+                break
+
+        if not is_checked_in:
+            print(f"Item ID {item_id} is not checked in or does not exist in the blockchain")
+            sys.exit(1)
+
         prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
 
         # Ensure 'why' is provided as it is not optional
@@ -214,7 +241,7 @@ def main():
         )
 
         if not blockchain.add_block(remove_block):
-            print(f"Item ID {item_id} is not checked in or does not exist in the blockchain")
+            print(f"Not able to remove Item ID {item_id}")
             sys.exit(1)
 
         timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(remove_block.timestamp))

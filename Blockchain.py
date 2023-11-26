@@ -61,20 +61,33 @@ class Blockchain:
 
     def show_history(self, case_id=None, item_id=None, num_entries=None):
         entries = []
-        count = 0
+        # print(case_id, item_id, num_entries)
+
         for block in reversed(self.chain):
-            if case_id and UUID(bytes=block.case_id).hex != case_id:
-                continue
-            if item_id and block.item_id.decode('utf-8') != item_id:
-                continue
+
             entry = {
-                'Case': UUID(bytes=block.case_id).hex,
-                'Item': block.item_id.decode('utf-8'),
+                'Case': UUID(bytes=block.case_id).hex if block.case_id else None,
+                'Item': block.item_id.decode('utf-8') if block.item_id else None,
                 'Action': block.state.decode('utf-8'),
                 'Time': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(block.timestamp))
             }
             entries.append(entry)
-            count += 1
-            if num_entries and count >= num_entries:
-                break
+
+
+        temp = entries
+        if case_id is not None:
+            for entry in temp:
+                if entry['Case'] != case_id:
+                    entries.remove(entry)
+        
+        temp = entries
+        if item_id is not None:
+            for entry in temp:
+                if entry['Item'] not in  item_id:
+                    
+                    entries.remove(entry)
+
+        if num_entries is not None:
+            entries = entries[:num_entries]
+
         return entries

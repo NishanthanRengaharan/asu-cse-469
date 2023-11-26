@@ -27,12 +27,14 @@ def validate_uuid(uuid_string):
 def main():
     parser = argparse.ArgumentParser(description="Blockchain-based Chain of Custody", add_help=False)
     parser.add_argument('command', choices=['add', 'checkout', 'checkin', 'show', 'remove', 'init', 'verify'])
+    parser.add_argument('subcommand', nargs='?', choices=['cases', 'items', 'history'])
     parser.add_argument('-c', '--case_id', help="Specifies the case identifier")
     parser.add_argument('-i', '--item_id', action='append', help="Specifies the evidence item's identifier")
     parser.add_argument('-h', '--handler', help="Specifies the handler's name")
     parser.add_argument('-H', '--help', action='help', help='Show this help message and exit')
     parser.add_argument('-o', '--organization', help="Organization name")
     parser.add_argument('-y', '--why', choices=['DISPOSED', 'DESTROYED', 'RELEASED'], help="Reason for removing the evidence item")
+    parser.add_argument('-n', '--num_entries', help="Number of entries")
     args = parser.parse_args()
 
     # Check for BCHOC_FILE_PATH environment variable
@@ -152,28 +154,33 @@ def main():
         print(f"Status: CHECKEDIN")
         print(f"Time of action: {timestamp_iso}")
 
-    elif args.command == 'show':
-        if args.case_id:
-            items = blockchain.show_items_for_case(args.case_id)
-            for item in items:
-                print(item)
-        else:
-            cases = blockchain.show_cases()
-            for case in cases:
-                print(case)
+    elif args.command == 'show' and args.subcommand == 'cases':
+        cases = blockchain.show_cases()
+        for case in cases:
+            print(case)
 
-    elif args.command == 'show history':
-        if args.case_id or args.item_id or args.num_entries:
-            history_entries = blockchain.show_history(args.case_id, args.item_id, args.num_entries)
-            for entry in history_entries:
-                print(f"Case: {entry['Case']}")
-                print(f"Item: {entry['Item']}")
-                print(f"Action: {entry['Action']}")
-                print(f"Time: {entry['Time']}")
-                print()
-        else:
-            print("Invalid arguments for show history command. Provide at least one of -c, -i, or -n.")
+    elif args.command == 'show' and args.subcommand == 'items':
+        if not args.case_id or not validate_uuid(args.case_id):
+            print("Invalid case ID")
             sys.exit(1)
+
+        items = blockchain.show_items_for_case(args.case_id)
+        for item in items:
+            print(item)
+
+    elif args.command == 'show' and args.subcommand == 'history':
+        if not args.case_id and not args.item_id:
+            print("At least one of -c or -i is required for the show history command.")
+            sys.exit(1)
+
+        history_entries = blockchain.show_history(args.case_id, args.item_id, args.num_entries)
+        for entry in history_entries:
+            print(f"Case: {entry['Case']}")
+            print(f"Item: {entry['Item']}")
+            print(f"Action: {entry['Action']}")
+            print(f"Time: {entry['Time']}")
+            print()
+
 
     elif args.command == 'remove':
         if not args.case_id or not args.item_id or not validate_uuid(args.case_id):

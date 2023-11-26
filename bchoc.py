@@ -103,6 +103,10 @@ def main():
         # Get the last state block of the item
         last_state_block = blockchain.get_last_state(item_id)
 
+        if last_state_block is None:
+            print(f"Item ID {item_id} must be checkedin before performing checkout.")
+            sys.exit(1)
+
         if last_state_block.state.decode('utf-8') != 'CHECKEDIN':
             print(f"Item ID {item_id} must be checked in before performing checkout.")
             sys.exit(1)
@@ -145,6 +149,11 @@ def main():
 
         # Check if the item's last state is checked out
         last_block = blockchain.get_last_state(item_id)
+
+        if last_block is None:
+            print(f"Item ID {item_id} must be checked out before performing checkin.")
+            sys.exit(1)
+
         if last_block.state.decode('utf-8') != 'CHECKEDOUT':
             print(f"Item ID {item_id} must be checked out before performing checkin.")
             sys.exit(1)

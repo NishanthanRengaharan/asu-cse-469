@@ -188,7 +188,12 @@ def main():
         item_id = args.item_id[0]  # Assuming only one item is removed at a time
         prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
 
-        removal_reason = args.why.encode('utf-8') if args.why else b''  # Assuming 'why' is an optional reason for removal
+        # Ensure 'why' is provided as it is not optional
+        if not args.why:
+            print("Removal reason is required. Please provide the '-y' or '--why' argument.")
+            sys.exit(1)
+
+        removal_reason = args.why.encode('utf-8')
 
         remove_block = Block(
             prev_hash=prev_hash,
@@ -209,9 +214,11 @@ def main():
         print(f"Case: {args.case_id}")
         print(f"Removed item: {item_id}")
         print(f"Status: REMOVED")
-        if args.why:
-            print(f"Removal Reason: {args.why}")
+        print(f"Removal Reason: {args.why}")
         print(f"Time of action: {timestamp_iso}")
+
+        # Exit with code 0 after successful removal
+        sys.exit(0)
 
     elif args.command == 'init':
     # Attempt to load the blockchain from file

@@ -216,6 +216,10 @@ def main():
 
         last_state_block = blockchain.get_last_state(item_id)
 
+        if not last_state_block:
+            print(f"Item ID {item_id} must be checked in before performing remove.")
+            sys.exit(1)
+
         if last_state_block.state.decode('utf-8') != 'CHECKEDIN':
             print(f"Item ID {item_id} must be checked in before performing remove.")
             sys.exit(1)

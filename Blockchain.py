@@ -55,7 +55,7 @@ class Blockchain:
     def show_items_for_case(self, case_id):
         items = set()
         for block in self.chain:
-            if UUID(bytes=block.case_id).hex == case_id and block.item_id:
+            if str(UUID(bytes=block.case_id)) == str(case_id) and block.item_id:
                 items.add(block.item_id.decode('utf-8'))
         return items
 
@@ -66,7 +66,7 @@ class Blockchain:
         for block in reversed(self.chain):
 
             entry = {
-                'Case': UUID(bytes=block.case_id).hex if block.case_id else None,
+                'Case': UUID(bytes=block.case_id) if block.case_id else None,
                 'Item': block.item_id.decode('utf-8') if block.item_id else None,
                 'Action': block.state.decode('utf-8'),
                 'Time': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(block.timestamp))

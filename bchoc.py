@@ -57,7 +57,7 @@ def main():
                 timestamp=0,
                 case_id=UUID('00000000-0000-0000-0000-000000000000').hex,
                 item_id='',
-                state=b'INITIAL\x00\x00\x00\x00',
+                state=b'INITIAL' + b'\x00' * (12 - len(b'INITIAL')),
                 handler=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
                 organization=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
                 data=b'Initial block\x00'

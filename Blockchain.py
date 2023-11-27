@@ -73,12 +73,12 @@ class Blockchain:
             }
             entries.append(entry)
 
-
         temp = entries
         if case_id is not None:
+            entries = []
             for entry in temp:
-                if entry['Case'] != case_id:
-                    entries.remove(entry)
+                if entry['Case'] == case_id:
+                    entries.add(entry)
         
         temp = entries
         if item_id is not None:

@@ -78,14 +78,14 @@ class Blockchain:
             entries = []
             for entry in temp:
                 if entry['Case'] == case_id:
-                    entries.add(entry)
+                    entries.append(entry)
         
         temp = entries
         if item_id is not None:
+            entries = []
             for entry in temp:
-                if entry['Item'] not in  item_id:
-                    
-                    entries.remove(entry)
+                if entry['Item'] in item_id:
+                    entries.append(entry)
 
         if num_entries is not None:
             entries = entries[:num_entries]

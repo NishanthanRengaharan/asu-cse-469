@@ -35,7 +35,7 @@ def main():
     parser.add_argument('-o', '--organization', help="Organization name")
     parser.add_argument('-y', '--why', choices=['DISPOSED', 'DESTROYED', 'RELEASED'], help="Reason for removing the evidence item")
     parser.add_argument('-n', '--num_entries', help="Number of entries")
-    parser.add_argument('-r','--reverse', nargs='?')
+    parser.add_argument('-r', '--reverse',action='store_true', help="Reverses the history list")
     args = parser.parse_args()
 
     # Check for BCHOC_FILE_PATH environment variable
@@ -194,11 +194,10 @@ def main():
             print(item)
 
     elif args.command == 'show' and args.subcommand == 'history':
-
-
         history_entries = blockchain.show_history(case_id=args.case_id, item_id=args.item_id, num_entries=args.num_entries)
-        if args.reverse:
-            entries = entries[::-1]
+        
+        if args.reverse and len(history_entries) > 0:
+            history_entries = history_entries[::-1]
         for entry in history_entries:
             print(f"Case: {entry['Case']}")
             print(f"Item: {entry['Item']}")

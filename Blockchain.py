@@ -63,7 +63,7 @@ class Blockchain:
         entries = []
         # print(case_id, item_id, num_entries)
 
-        for block in reversed(self.chain):
+        for block in self.chain:
 
             entry = {
                 'Case': UUID(bytes=block.case_id) if block.case_id else None,

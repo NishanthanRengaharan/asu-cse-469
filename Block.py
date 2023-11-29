@@ -16,9 +16,19 @@ class Block:
         self.data = data if isinstance(data, bytes) else data.encode('utf-8')
 
     def calculate_hash(self):
-        header = struct.pack("32s d 16s I 12s 20s 20s I", self.prev_hash, self.timestamp, self.case_id,
-                             self.item_id, self.state, self.handler, self.organization, len(self.data))
-        return hashlib.sha256(header + self.data).hexdigest()
+        header = struct.pack(
+            "32s d 16s I 12s 20s 20s I",
+            self.prev_hash,
+            self.timestamp,
+            self.case_id,
+            self.item_id,
+            self.state.ljust(12, b'\x00'),
+            self.handler.ljust(20, b'\x00'),
+            self.organization.ljust(20, b'\x00'),
+            len(self.data)
+        )
+        self.hash = hashlib.sha256(header + self.data).hexdigest()
+        return self.hash
 
     
 

@@ -65,5 +65,8 @@ def main():
         else:
             print("Blockchain file found with INITIAL block.")
 
+    if args.command == 'verify':
+        exit(1)
+
 if __name__ == "__main__":
     main()

@@ -10,22 +10,17 @@ class Block:
         self.timestamp = timestamp
         self.case_id = case_id if isinstance(case_id, bytes) else UUID(case_id).bytes
         self.item_id = item_id
-        self.state = state.encode('utf-8').ljust(12, b'\x00')
-        self.handler = handler.encode('utf-8').ljust(20, b'\x00')
-        self.organization = organization.encode('utf-8').ljust(20, b'\x00')
-        self.data = data.encode('utf-8')
+        self.state = state if isinstance(state, bytes) else state.encode('utf-8').ljust(12, b'\x00')
+        self.handler = handler if isinstance(handler, bytes) else handler.encode('utf-8').ljust(20, b'\x00')
+        self.organization = organization if isinstance(organization, bytes) else organization.encode('utf-8').ljust(20, b'\x00')
+        self.data = data if isinstance(data, bytes) else data.encode('utf-8')
 
     def calculate_hash(self):
         header = struct.pack("32s d 16s I 12s 20s 20s I", self.prev_hash, self.timestamp, self.case_id,
                              self.item_id, self.state, self.handler, self.organization, len(self.data))
         return hashlib.sha256(header + self.data).hexdigest()
 
-    @staticmethod
-    def unpack_from_binary(binary_data):
-        struct_format = struct.Struct("32s d 16s I 12s 20s 20s I")
-        unpacked_data = struct_format.unpack(binary_data[:struct_format.size])
-        data = binary_data[struct_format.size:]
-        return Block(*unpacked_data[:-1], data=data.rstrip(b'\x00'))
+    
 
     def pack_into_binary(self):
         # Debug printing

@@ -6,7 +6,6 @@ import argparse
 import os
 import struct
 import hashlib
-import pickle
 import time
 import sys
 from uuid import UUID

@@ -4,5 +4,3 @@ all:
 clean:
 	rm bchoc
 	rm blockchain.bchoc
-	
-

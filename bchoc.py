@@ -30,7 +30,7 @@ def initialize_blockchain_if_needed(blockchain_file_path):
         print("Blockchain file not found. Creating INITIAL block.")
         initial_block = Block(
             prev_hash=b'\x00' * 32,
-            timestamp=time.time(),
+            timestamp=0,
             case_id=UUID(int=0).bytes,
             item_id=0,
             state='INITIAL',
@@ -41,7 +41,6 @@ def initialize_blockchain_if_needed(blockchain_file_path):
         blockchain = Blockchain()
         blockchain.add_block(initial_block)
         blockchain.save_to_file(blockchain_file_path)
-        print("Initial block created and saved to the blockchain.")
     return blockchain
 
 def create_initial_block():
@@ -99,27 +98,32 @@ def main():
             print("Invalid case ID format.")
             sys.exit(1)
 
-        # Convert item_id from list to single value (assuming single item_id is allowed per command)
-        item_id = args.item_id[0] if args.item_id else None
 
-        # Retrieve the hash of the last block
-        last_block_hash = get_last_block_hash(blockchain)
-        # Create a new block with the provided information
-        new_block = Block(
-            prev_hash=last_block_hash,
-            timestamp=time.time(),
-            case_id=args.case_id,
-            item_id=int(item_id),
-            state='CHECKEDIN',
-            handler=args.handler or '',
-            organization=args.organization or '',
-            data=''
-        )
+        for item_id in args.item_id:
+            if int(item_id) in blockchain.ids:
+                print("Evidence with {item_id} already present in the record")
+                exit(1)
+            last_block_hash = get_last_block_hash(blockchain)
+            # Create a new block with the provided information
+            new_block = Block(
+                prev_hash=last_block_hash,
+                timestamp=time.time(),
+                case_id=args.case_id,
+                item_id=int(item_id),
+                state='CHECKEDIN',
+                handler=args.handler or '',
+                organization=args.organization or '',
+                data=''
+            )
 
-        # Add the new block to the blockchain and save
-        blockchain.add_block(new_block)
+            blockchain.add_block(new_block)
+
+            timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(new_block.timestamp))
+            print(f"Case: {args.case_id}")
+            print(f"Added item: {item_id}")
+            print(f"Status: CHECKEDIN")
+            print(f"Time of action: {timestamp_iso}")
         blockchain.save_to_file(blockchain_file_path)
-        print(f"Added block for case {args.case_id} with item {item_id}")
 
 
 if __name__ == "__main__":

@@ -6,9 +6,11 @@ from Block import Block
 class Blockchain:
     def __init__(self):
         self.chain = []
+        self.ids = set()
 
     def add_block(self, block):
         self.chain.append(block)
+        self.ids.add(block.item_id)
 
     def save_to_file(self, filename):
         with open(filename, 'wb') as file:

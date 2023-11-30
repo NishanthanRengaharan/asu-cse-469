@@ -26,7 +26,7 @@ class Block:
             self.state.ljust(12, b'\x00'),
             self.handler.ljust(20, b'\x00'),
             self.organization.ljust(20, b'\x00'),
-            len(self.data)
+            len(self.data.ljust(14, b'\x00'))
         )
         self.hash = hashlib.sha256(header + self.data).hexdigest()
         return self.hash

@@ -46,14 +46,15 @@ class Block:
             self.state.ljust(12, b'\x00'),
             self.handler.ljust(20, b'\x00'),
             self.organization.ljust(20, b'\x00'),
-            len(self.data)
+            
+            len(self.data.ljust(14, b'\x00'))
         )
         
         # Debug printing
         # print(f"Packed Header: {header.hex()}")
         # print(f"Packed Data: {self.data.hex()}")
         
-        return header + self.data
+        return header + self.data.ljust(14, b'\x00')
 
     @staticmethod
     def unpack_from_binary(binary_data):

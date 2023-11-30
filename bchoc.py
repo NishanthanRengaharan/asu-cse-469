@@ -38,9 +38,6 @@ def initialize_blockchain_if_needed(blockchain_file_path):
             organization='',
             data='Initial block\x00'
         )
-        # print(initial_block.case_id)
-        # print(time.time())
-        # print(datetime.utcnow())
         blockchain = Blockchain()
         blockchain.add_block(initial_block)
         blockchain.save_to_file(blockchain_file_path)
@@ -93,8 +90,6 @@ def main():
     elif args.command == 'add':
         blockchain = initialize_blockchain_if_needed(blockchain_file_path)
         
-            
-
         # Validate case_id and item_id
         if not args.case_id or not args.item_id:
             print("Case ID and Item ID are required.")
@@ -109,7 +104,6 @@ def main():
 
         # Retrieve the hash of the last block
         last_block_hash = get_last_block_hash(blockchain)
-        # print("last block hash",last_block_hash)
         # Create a new block with the provided information
         new_block = Block(
             prev_hash=last_block_hash,

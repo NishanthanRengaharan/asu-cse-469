@@ -27,13 +27,13 @@ class Blockchain:
                         break  # End of file
                     
                     # Debug printing
-                    print(f"Read Header Data: {header_data.hex()}")
+                    # print(f"Read Header Data: {header_data.hex()}")
                     
                     data_len = struct.unpack('I', header_data[-4:])[0]
                     data = file.read(data_len)
                     
                     # Debug printing
-                    print(f"Read Data: {data.hex()}")
+                    # print(f"Read Data: {data.hex()}")
                     
                     block = Block.unpack_from_binary(header_data + data)
                     blockchain.add_block(block)

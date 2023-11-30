@@ -35,7 +35,7 @@ class Block:
 
     def pack_into_binary(self):
         # Debug printing
-        print(f"Packing Block: {self}")
+        # print(f"Packing Block: {self}")
         
         header = struct.pack(
             "32s d 16s I 12s 20s 20s I",
@@ -50,8 +50,8 @@ class Block:
         )
         
         # Debug printing
-        print(f"Packed Header: {header.hex()}")
-        print(f"Packed Data: {self.data.hex()}")
+        # print(f"Packed Header: {header.hex()}")
+        # print(f"Packed Data: {self.data.hex()}")
         
         return header + self.data
 
@@ -63,7 +63,7 @@ class Block:
         data = binary_data[116:]
         stripped_data = data.rstrip(b'\x00')
         # Debug printing
-        print(f"Unpacking Block: {unpacked_data}")
-        print(f"Unpacked Data: {stripped_data.decode()}")
+        # print(f"Unpacking Block: {unpacked_data}")
+        # print(f"Unpacked Data: {stripped_data.decode()}")
         
         return Block(*unpacked_data[:-1], data=data.rstrip(b'\x00'))

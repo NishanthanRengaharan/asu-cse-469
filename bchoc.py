@@ -40,6 +40,7 @@ def initialize_blockchain_if_needed(blockchain_file_path):
         blockchain.save_to_file(blockchain_file_path)
     else:
         print("Blockchain file found with INITIAL block.")
+        # pass
     return blockchain
 
 def create_initial_block():

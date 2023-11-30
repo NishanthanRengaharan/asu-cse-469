@@ -1,0 +1,32 @@
+Initialization
+./bchoc init
+
+Adding evidence items
+./bchoc add -c 68f1f201-7e55-47f2-9bc7-0924e483e5d2 -i 3676481256 -h QR7ZUQ2B6mfabP7OPkLy -o PPjKEDS91PU1YTvTrpwm
+
+Disposing evidence items
+./bchoc remove -i 3676481256 --why DISPOSED
+
+Adding evidence items
+./bchoc add -c 14974949-c875-4ce5-85e0-bbfd77bba0dd -i 1566915374 -h GkXvsJehGudYqOvvFTA6 -o jYTr3cda5Fjk2YGaTLm2
+
+Releasing evidence items to Dr.Mike Mabey
+./bchoc remove -i 1566915374 --why RELEASED -o "Dr. Mike Mabey, no address given"
+
+Adding evidence items
+./bchoc add -c b4ef5e3a-f7c8-4bbd-8c85-350cd6f654c4 -i 3542618238 -h ETG1cwDNpUqusgp6l27b -o HjnBTUm0HtgsdC9vDtRN
+
+Checking out evidence items
+./bchoc checkout -i 3542618238 -h 3lZypFZzEk5IJZuNQxID -o GnFkGCed64WSXjGTtbee
+
+Adding evidence items
+./bchoc add -c 12f83d86-60c9-48e6-b1c1-cd06a83959ef -i 2623243334 -h Lhypf2KiaHxXHshIYml1 -o UCkxyYCapSIht7SQwJQa
+
+Checking in evidence items
+./bchoc checkin -i 3542618238 -h R6smW5t1LSCbD9Q4h0wJ -o 29XtZS3vEczZCClvVD6s
+
+showing transaction history
+./bchoc show history
+
+showing transaction history in reverse
+./bchoc show history --reverse

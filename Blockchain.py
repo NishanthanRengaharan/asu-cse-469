@@ -82,3 +82,13 @@ class Blockchain:
                 if block.item_id == int(item_id):
                     return block
             return None
+    
+    def verify_chain(self):
+        for i in range(1, len(self.chain)):
+            current_block = self.chain[i]
+            previous_block = self.chain[i - 1]
+            if current_block.prev_hash != bytes.fromhex(previous_block.hash):
+                return False
+            if current_block.hash != current_block.calculate_hash():
+                return False
+        return True

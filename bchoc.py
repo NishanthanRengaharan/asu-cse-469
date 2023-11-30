@@ -83,6 +83,7 @@ def main():
         blockchain = initialize_blockchain_if_needed(blockchain_file_path)
         if blockchain:
             print("Blockchain file found with INITIAL block.")
+
     elif args.command == 'add':
         blockchain = initialize_blockchain_if_needed(blockchain_file_path)
         
@@ -165,7 +166,6 @@ def main():
         print(f"Status: CHECKEDOUT")
         print(f"Time of action: {timestamp_iso}")
         
-
     elif args.command == 'checkin':
         if not args.item_id or not args.handler or not args.organization:
             print("Item ID, handler, and organization are mandatory for checkin.")
@@ -321,6 +321,12 @@ def main():
         # Exit with code 0 after successful removal
         # sys.exit(0)
 
+    elif args.command == 'verify':
+        if blockchain.verify_chain():
+            print("Blockchain verified, no errors found")
+        else:
+            print("Blockchain verification failed")
+            sys.exit(1)
 
 if __name__ == "__main__":
     main()

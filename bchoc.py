@@ -177,11 +177,13 @@ def main():
             print("Blockchain not initialized. Cannot perform checkin.")
             sys.exit(1)
         # Check if the item's last state is checked out
+
         last_block = blockchain.get_last_state(item_id)
         if last_block is None:
             print(f"Item ID {item_id} must be checked out before performing checkin.")
             sys.exit(1)
-        if str(last_block.state.decode('utf-8')) != 'CHECKEDOUT':
+
+        if last_block.state.rstrip(b'\x00').decode('utf-8') != 'CHECKEDOUT':
             print(f"Item ID {item_id} must be checked out before performing checkin.")
             sys.exit(1)
 
@@ -190,15 +192,17 @@ def main():
         new_block = Block(
                 prev_hash=last_block_hash,
                 timestamp=time.time(),
-                case_id=args.case_id,
+                case_id=last_block.case_id,
                 item_id=int(item_id),
                 state='CHECKEDIN',
                 handler=args.handler or '',
                 organization=args.organization or '',
                 data=''
             )
+        
 
         blockchain.add_block(new_block)
+        blockchain.save_to_file(blockchain_file_path)
 
 
         timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(new_block.timestamp))
@@ -316,8 +320,7 @@ def main():
         print(f"Time of action: {timestamp_iso}")
         # Exit with code 0 after successful removal
         # sys.exit(0)
-    elif args.command == 'verify':
-        sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

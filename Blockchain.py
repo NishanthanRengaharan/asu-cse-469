@@ -60,6 +60,7 @@ class Blockchain:
                     'Time': datetime.fromtimestamp(block.timestamp, datetime.timezone.utc).isoformat()
                 }
                 history.append(history_entry)
+    
         return history
     
     def show_cases(self):
@@ -76,3 +77,9 @@ class Blockchain:
             if str(UUID(bytes=block.case_id)) == case_id:
                 items.add(block.item_id)
         return items
+    
+    def get_last_state(self, item_id):
+            for block in reversed(self.chain):
+                if block.item_id == item_id:
+                    return block
+            return None

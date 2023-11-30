@@ -13,9 +13,6 @@ from Blockchain import Blockchain
 from datetime import datetime, timezone
 
 
-# Define the Blockchain class
-
-
 # Helper functions
 def validate_uuid(uuid_string):
     try:
@@ -78,7 +75,7 @@ def main():
 
     # Check for BCHOC_FILE_PATH environment variable
     blockchain_file_path = os.environ.get('BCHOC_FILE_PATH', 'blockchain.bchoc')
-    
+    blockchain = Blockchain.load_from_file(blockchain_file_path)
 
     
 
@@ -124,6 +121,99 @@ def main():
             print(f"Status: CHECKEDIN")
             print(f"Time of action: {timestamp_iso}")
         blockchain.save_to_file(blockchain_file_path)
+    elif args.command == 'checkout':
+        
+        if not args.item_id or not args.handler or not args.organization:
+            print("Item ID, handler, and organization are mandatory for checkout.")
+            sys.exit(1)
+        item_id = args.item_id[0]
+        # Check if blockchain has been initialized
+        if blockchain is None:
+            print("Blockchain not initialized. Cannot perform checkin.")
+            sys.exit(1)
+        # Get the last state block of the item
+        last_state_block = blockchain.get_last_state(item_id)
+        print(last_state_block)
+        if last_state_block is None:
+            print(f"Item ID {item_id} must be checkedin before performing checkout.")
+            sys.exit(1)
+        if last_state_block.state.decode('utf-8') != 'CHECKEDIN':
+            print(f"Item ID {item_id} must be checked in before performing checkout.")
+            sys.exit(1)
+
+        last_block_hash = get_last_block_hash(blockchain)
+            # Create a new block with the provided information
+        new_block = Block(
+                prev_hash=last_block_hash,
+                timestamp=time.time(),
+                case_id=args.case_id,
+                item_id=int(item_id),
+                state='CHECKEDIN',
+                handler=args.handler or '',
+                organization=args.organization or '',
+                data=''
+            )
+
+        blockchain.add_block(new_block)
+
+        timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(new_block.timestamp))
+        print(f"Checked out item: {item_id}")
+        print(f"Status: CHECKEDOUT")
+        print(f"Time of action: {timestamp_iso}")
+
+    elif args.command == 'checkin':
+        if not args.item_id or not args.handler or not args.organization:
+            print("Item ID, handler, and organization are mandatory for checkin.")
+            sys.exit(1)
+        # Assuming only one item is checked in at a time
+        item_id = args.item_id[0]
+        # Check if blockchain has been initialized
+        if blockchain is None:
+            print("Blockchain not initialized. Cannot perform checkin.")
+            sys.exit(1)
+        # Check if the item's last state is checked out
+        last_block = blockchain.get_last_state(item_id)
+        if last_block is None:
+            print(f"Item ID {item_id} must be checked out before performing checkin.")
+            sys.exit(1)
+        if last_block.state.decode('utf-8') != 'CHECKEDOUT':
+            print(f"Item ID {item_id} must be checked out before performing checkin.")
+            sys.exit(1)
+
+        
+        # # Implement checkin logic
+        # prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
+        # checkin_block = Block(
+        #     prev_hash=prev_hash,
+        #     timestamp=time.time(),
+        #     case_id=UUID(bytes=last_block.case_id).hex if last_block.case_id else None,
+        #     item_id=item_id,
+        #     state='CHECKEDIN',
+        #     handler=args.handler,
+        #     organization=args.organization
+        # )
+        # blockchain.chain.append(checkin_block)
+        # blockchain.item_ids.add(checkin_block.item_id)
+        last_block_hash = get_last_block_hash(blockchain)
+        # Create a new block with the provided information
+        new_block = Block(
+                prev_hash=last_block_hash,
+                timestamp=time.time(),
+                case_id=args.case_id,
+                item_id=int(item_id),
+                state='CHECKEDIN',
+                handler=args.handler or '',
+                organization=args.organization or '',
+                data=''
+            )
+
+        blockchain.add_block(new_block)
+
+
+        timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(new_block.timestamp))
+        print(f"Checked in item: {item_id}")
+        print(f"Status: CHECKEDIN")
+        print(f"Time of action: {timestamp_iso}")
 
     elif args.command == 'show' and args.subcommand == 'history':
         if not args.item_id:
@@ -136,6 +226,20 @@ def main():
             sys.exit(1)
 
         history = blockchain.show_history(args.item_id[0])
+        temp = history
+        if args.case_id is not None:
+            history = []
+            for entry in temp:
+                if entry['Case'] == case_id:
+                    history.add(entry)
+        
+        temp = history
+        if args.item_id is not None:
+            for entry in temp:
+                if entry['Item'] not in  args.item_id:
+                    history.remove(entry)
+        if args.num_entries is not None:
+            history = history[:int(args.num_entries)]
         for entry in history:
             print(f"Case: {entry['Case']}")
             print(f"Item: {entry['Item']}")

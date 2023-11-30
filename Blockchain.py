@@ -49,17 +49,16 @@ class Blockchain:
             print(f"Error loading blockchain from file: {e}")
             sys.exit(1)
 
-    def show_history(self, item_id):
+    def show_history(self):
         history = []
         for block in self.chain:
-            if block.item_id == int(item_id):
-                history_entry = {
-                    'Case': UUID(bytes=block.case_id).hex,
-                    'Item': block.item_id,
-                    'Action': block.state.decode('utf-8'),
-                    'Time': datetime.fromtimestamp(block.timestamp, datetime.timezone.utc).isoformat()
-                }
-                history.append(history_entry)
+            history_entry = {
+                'Case': UUID(bytes=block.case_id).hex,
+                'Item': block.item_id,
+                'Action': block.state.decode('utf-8'),
+                # 'Time': datetime.fromtimestamp(block.timestamp, datetime.timezone.utc).isoformat()
+            }
+            history.append(history_entry)
     
         return history
     
@@ -80,6 +79,6 @@ class Blockchain:
     
     def get_last_state(self, item_id):
             for block in reversed(self.chain):
-                if block.item_id == item_id:
+                if block.item_id == int(item_id):
                     return block
             return None

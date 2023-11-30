@@ -129,16 +129,18 @@ def main():
         item_id = args.item_id[0]
         # Check if blockchain has been initialized
         if blockchain is None:
-            print("Blockchain not initialized. Cannot perform checkin.")
+            print("Blockchain not initialized. Cannot perform checkout.")
             sys.exit(1)
         # Get the last state block of the item
         last_state_block = blockchain.get_last_state(item_id)
-        print(last_state_block)
+
         if last_state_block is None:
             print(f"Item ID {item_id} must be checkedin before performing checkout.")
             sys.exit(1)
-        if last_state_block.state.decode('utf-8') != 'CHECKEDIN':
-            print(f"Item ID {item_id} must be checked in before performing checkout.")
+        
+
+        if last_state_block.state.rstrip(b'\x00').decode('utf-8') != 'CHECKEDIN':
+            print(f"Item ID {item_id} must be checked in before performing  checkout.")
             sys.exit(1)
 
         last_block_hash = get_last_block_hash(blockchain)
@@ -146,9 +148,9 @@ def main():
         new_block = Block(
                 prev_hash=last_block_hash,
                 timestamp=time.time(),
-                case_id=args.case_id,
+                case_id=last_state_block.case_id,
                 item_id=int(item_id),
-                state='CHECKEDIN',
+                state='CHECKEDOUT',
                 handler=args.handler or '',
                 organization=args.organization or '',
                 data=''
@@ -160,6 +162,7 @@ def main():
         print(f"Checked out item: {item_id}")
         print(f"Status: CHECKEDOUT")
         print(f"Time of action: {timestamp_iso}")
+        blockchain.save_to_file(blockchain_file_path)
 
     elif args.command == 'checkin':
         if not args.item_id or not args.handler or not args.organization:
@@ -176,24 +179,10 @@ def main():
         if last_block is None:
             print(f"Item ID {item_id} must be checked out before performing checkin.")
             sys.exit(1)
-        if last_block.state.decode('utf-8') != 'CHECKEDOUT':
+        if str(last_block.state.decode('utf-8')) != 'CHECKEDOUT':
             print(f"Item ID {item_id} must be checked out before performing checkin.")
             sys.exit(1)
 
-        
-        # # Implement checkin logic
-        # prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
-        # checkin_block = Block(
-        #     prev_hash=prev_hash,
-        #     timestamp=time.time(),
-        #     case_id=UUID(bytes=last_block.case_id).hex if last_block.case_id else None,
-        #     item_id=item_id,
-        #     state='CHECKEDIN',
-        #     handler=args.handler,
-        #     organization=args.organization
-        # )
-        # blockchain.chain.append(checkin_block)
-        # blockchain.item_ids.add(checkin_block.item_id)
         last_block_hash = get_last_block_hash(blockchain)
         # Create a new block with the provided information
         new_block = Block(
@@ -216,21 +205,21 @@ def main():
         print(f"Time of action: {timestamp_iso}")
 
     elif args.command == 'show' and args.subcommand == 'history':
-        if not args.item_id:
-            print("Item ID is required for showing history.")
-            sys.exit(1)
+        # if not args.item_id:
+        #     print("Item ID is required for showing history.")
+        #     sys.exit(1)
 
         blockchain = Blockchain.load_from_file(blockchain_file_path)
         if blockchain is None:
             print("Blockchain not initialized. No history available.")
             sys.exit(1)
 
-        history = blockchain.show_history(args.item_id[0])
+        history = blockchain.show_history()
         temp = history
         if args.case_id is not None:
             history = []
             for entry in temp:
-                if entry['Case'] == case_id:
+                if entry['Case'] == args.case_id:
                     history.add(entry)
         
         temp = history
@@ -244,7 +233,8 @@ def main():
             print(f"Case: {entry['Case']}")
             print(f"Item: {entry['Item']}")
             print(f"Action: {entry['Action']}")
-            print(f"Time: {entry['Time']}\n")
+            # print(f"Time: {entry['Time']}")
+            print("\n")
 
     elif args.command == 'show' and args.subcommand == 'cases':
         blockchain = Blockchain.load_from_file(blockchain_file_path)
@@ -272,6 +262,53 @@ def main():
         items = blockchain.show_items_for_case(args.case_id)
         for item in items:
             print(item)
+
+    elif args.command == 'remove':
+        if not args.item_id:
+            print("Invalid item ID")
+            sys.exit(1)
+        # Check if blockchain has been initialized
+        if blockchain is None:
+            print("Blockchain not initialized. Cannot perform removal.")
+            sys.exit(1)
+        
+        # Ensure 'why' is provided as it is not optional
+        if not args.why:
+            print("Removal reason is required. Please provide the '-y' or '--why' argument.")
+            sys.exit(1)
+        if args.why == "RELEASED" and not args.organization:
+            print("Removal reason - RELEASED requires organization.")
+            sys.exit(1)
+        item_id = args.item_id[0]  # Assuming only one item is removed at a time
+        last_state_block = blockchain.get_last_state(item_id)
+        if not last_state_block:
+            print(f"Item ID {item_id} must be checked in before performing remove.")
+            sys.exit(1)
+        if last_state_block.state.decode('utf-8') != 'CHECKEDIN':
+            print(f"Item ID {item_id} must be checked in before performing remove.")
+            sys.exit(1)
+        prev_hash = blockchain.chain[-1].hash if blockchain.chain else None
+        removal_reason = args.why.encode('utf-8')
+        remove_block = Block(
+            prev_hash=prev_hash,
+            timestamp=time.time(),
+            case_id=UUID(bytes=last_state_block.case_id).hex if last_state_block.case_id else None,
+            item_id=item_id,
+            state='REMOVED',
+            handler=args.handler,
+            organization=args.organization,
+            data=removal_reason
+        )
+        blockchain.chain.append(remove_block)
+        blockchain.item_ids.add(remove_block.item_id)
+        timestamp_iso = time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(remove_block.timestamp))
+        print(f"Case: {UUID(bytes=last_state_block.case_id).hex if last_state_block.case_id else None}")
+        print(f"Removed item: {item_id}")
+        print(f"Status: REMOVED")
+        print(f"Removal Reason: {args.why}")
+        print(f"Time of action: {timestamp_iso}")
+        # Exit with code 0 after successful removal
+        # sys.exit(0)
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,4 @@
+#Blockchain.py
 import datetime
 import os
 import struct
@@ -53,11 +54,13 @@ class Blockchain:
     def show_history(self):
         history = []
         for block in self.chain:
+            formatted_time = time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(block.timestamp)) + '.' + str(int(block.timestamp * 1000000) % 1000000).zfill(6) + 'Z'
             history_entry = {
                 'Case': UUID(bytes=block.case_id).hex,
                 'Item': block.item_id,
                 'Action': block.state.rstrip(b'\x00').decode('utf-8'),
-                'Time': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(block.timestamp))
+                'Time': formatted_time
+                # , time.gmtime(block.timestamp))
             }
             history.append(history_entry)
     

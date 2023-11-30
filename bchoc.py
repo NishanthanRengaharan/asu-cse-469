@@ -27,7 +27,7 @@ def initialize_blockchain_if_needed(blockchain_file_path):
         print("Blockchain file not found. Creating INITIAL block.")
         initial_block = Block(
             prev_hash=b'\x00' * 32,
-            timestamp=0,
+            timestamp=time.time(),
             case_id=UUID(int=0).bytes,
             item_id=0,
             state='INITIAL',
@@ -235,12 +235,11 @@ def main():
         temp = history
         # print(history)
         if args.item_id is not None:
-            history = []
             for entry in temp:
                 # print(len(temp),len(history))
-                # print(str(entry['Item']),  args.item_id, str(entry['Item']) not in  args.item_id)
-                if str(entry['Item']) in  args.item_id:
-                    history.append(entry)
+                print(entry['Item'],  args.item_id,entry['Item'] not in  args.item_id)
+                if entry['Item'] not in  args.item_id:
+                    history.remove(entry)
 
         if args.num_entries is not None:
             history = history[:int(args.num_entries)]

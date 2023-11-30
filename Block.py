@@ -14,11 +14,12 @@ class Block:
         self.handler = handler if isinstance(handler, bytes) else handler.encode('utf-8').ljust(20, b'\x00')
         self.organization = organization if isinstance(organization, bytes) else organization.encode('utf-8').ljust(20, b'\x00')
         self.data = data if isinstance(data, bytes) else data.encode('utf-8')
+        self.calculate_hash()
 
     def calculate_hash(self):
         header = struct.pack(
             "32s d 16s I 12s 20s 20s I",
-            self.prev_hash,
+            self.prev_hash if isinstance(self.prev_hash, bytes) else self.prev_hash.encode('utf-8'),
             self.timestamp,
             self.case_id,
             self.item_id,
@@ -38,7 +39,7 @@ class Block:
         
         header = struct.pack(
             "32s d 16s I 12s 20s 20s I",
-            self.prev_hash,
+            self.prev_hash if isinstance(self.prev_hash, bytes) else self.prev_hash.encode('utf-8'),
             self.timestamp,
             self.case_id,
             self.item_id,

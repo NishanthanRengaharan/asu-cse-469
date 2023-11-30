@@ -4,3 +4,6 @@ all:
 clean:
 	rm bchoc
 	rm blockchain.bchoc
+
+init:
+	./bchoc init

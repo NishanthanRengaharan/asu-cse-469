@@ -121,6 +121,49 @@ def main():
         blockchain.save_to_file(blockchain_file_path)
         print(f"Added block for case {args.case_id} with item {item_id}")
 
+    elif args.command == 'show' and args.subcommand == 'history':
+        if not args.item_id:
+            print("Item ID is required for showing history.")
+            sys.exit(1)
+
+        blockchain = Blockchain.load_from_file(blockchain_file_path)
+        if blockchain is None:
+            print("Blockchain not initialized. No history available.")
+            sys.exit(1)
+
+        history = blockchain.show_history(args.item_id[0])
+        for entry in history:
+            print(f"Case: {entry['Case']}")
+            print(f"Item: {entry['Item']}")
+            print(f"Action: {entry['Action']}")
+            print(f"Time: {entry['Time']}\n")
+
+    elif args.command == 'show' and args.subcommand == 'cases':
+        blockchain = Blockchain.load_from_file(blockchain_file_path)
+        if blockchain is None:
+            print("Blockchain not initialized. No cases available.")
+            sys.exit(1)
+
+        cases = blockchain.show_cases()
+        if cases:
+            for case_id in cases:
+                print(case_id)
+        else:
+            print("No cases found in the blockchain.")
+
+    elif args.command == 'show' and args.subcommand == 'items':
+        if not args.case_id:
+            print("Case ID is required for showing items.")
+            sys.exit(1)
+
+        blockchain = Blockchain.load_from_file(blockchain_file_path)
+        if blockchain is None:
+            print("Blockchain not initialized. No items available.")
+            sys.exit(1)
+
+        items = blockchain.show_items_for_case(args.case_id)
+        for item in items:
+            print(item)
 
 if __name__ == "__main__":
     main()

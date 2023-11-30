@@ -1,6 +1,8 @@
+import datetime
 import os
 import struct
 import sys
+from uuid import UUID
 from Block import Block
 
 class Blockchain:
@@ -46,3 +48,31 @@ class Blockchain:
         except Exception as e:
             print(f"Error loading blockchain from file: {e}")
             sys.exit(1)
+
+    def show_history(self, item_id):
+        history = []
+        for block in self.chain:
+            if block.item_id == int(item_id):
+                history_entry = {
+                    'Case': UUID(bytes=block.case_id).hex,
+                    'Item': block.item_id,
+                    'Action': block.state.decode('utf-8'),
+                    'Time': datetime.fromtimestamp(block.timestamp, datetime.timezone.utc).isoformat()
+                }
+                history.append(history_entry)
+        return history
+    
+    def show_cases(self):
+        cases = set()
+        for block in self.chain:
+            if block.case_id != b'\x00' * 16:  # Check if the case_id is not empty
+                case_id_str = str(UUID(bytes=block.case_id))
+                cases.add(case_id_str)
+        return cases
+    
+    def show_items_for_case(self, case_id):
+        items = set()
+        for block in self.chain:
+            if str(UUID(bytes=block.case_id)) == case_id:
+                items.add(block.item_id)
+        return items

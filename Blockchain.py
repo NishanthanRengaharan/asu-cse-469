@@ -2,6 +2,7 @@ import datetime
 import os
 import struct
 import sys
+import time
 from uuid import UUID
 from Block import Block
 
@@ -55,8 +56,9 @@ class Blockchain:
             history_entry = {
                 'Case': UUID(bytes=block.case_id).hex,
                 'Item': block.item_id,
-                'Action': block.state.decode('utf-8'),
-                # 'Time': datetime.fromtimestamp(block.timestamp, datetime.timezone.utc).isoformat()
+                'Action': block.state.rstrip(b'\x00').decode('utf-8'),
+                'Time': time.strftime('%Y-%m-%dT%H:%M:%S.%220451Z')
+                # , time.gmtime(block.timestamp))
             }
             history.append(history_entry)
     

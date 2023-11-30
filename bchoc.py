@@ -38,6 +38,8 @@ def initialize_blockchain_if_needed(blockchain_file_path):
         blockchain = Blockchain()
         blockchain.add_block(initial_block)
         blockchain.save_to_file(blockchain_file_path)
+    else:
+        print("Blockchain file found with INITIAL block.")
     return blockchain
 
 def create_initial_block():
@@ -81,8 +83,7 @@ def main():
 
     if args.command == 'init':
         blockchain = initialize_blockchain_if_needed(blockchain_file_path)
-        if blockchain:
-            print("Blockchain file found with INITIAL block.")
+            
 
     elif args.command == 'add':
         blockchain = initialize_blockchain_if_needed(blockchain_file_path)
@@ -221,26 +222,34 @@ def main():
             sys.exit(1)
 
         history = blockchain.show_history()
+        if args.reverse:
+            history = history[::-1]
+        
         temp = history
         if args.case_id is not None:
             history = []
             for entry in temp:
-                if entry['Case'] == args.case_id:
-                    history.add(entry)
+                if str(UUID(bytes = bytes.fromhex(entry['Case']))) == args.case_id:
+                    history.append(entry)
         
         temp = history
+        # print(history)
         if args.item_id is not None:
             for entry in temp:
+                # print(len(temp),len(history))
+                print(entry['Item'],  args.item_id,entry['Item'] not in  args.item_id)
                 if entry['Item'] not in  args.item_id:
                     history.remove(entry)
+
         if args.num_entries is not None:
             history = history[:int(args.num_entries)]
+
         for entry in history:
-            print(f"Case: {entry['Case']}")
+            # str(UUID(bytes=x))
+            print(f"Case: {UUID(bytes = bytes.fromhex(entry['Case']))}")
             print(f"Item: {entry['Item']}")
             print(f"Action: {entry['Action']}")
-            # print(f"Time: {entry['Time']}")
-            print("\n")
+            print(f"Time: {entry['Time']}\n")
 
     elif args.command == 'show' and args.subcommand == 'cases':
         blockchain = Blockchain.load_from_file(blockchain_file_path)

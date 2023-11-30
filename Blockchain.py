@@ -57,8 +57,7 @@ class Blockchain:
                 'Case': UUID(bytes=block.case_id).hex,
                 'Item': block.item_id,
                 'Action': block.state.rstrip(b'\x00').decode('utf-8'),
-                'Time': time.strftime('%Y-%m-%dT%H:%M:%S.%220451Z')
-                # , time.gmtime(block.timestamp))
+                'Time': time.strftime('%Y-%m-%dT%H:%M:%S.%fZ', time.gmtime(block.timestamp))
             }
             history.append(history_entry)
     

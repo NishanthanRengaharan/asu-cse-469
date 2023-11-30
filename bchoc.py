@@ -235,11 +235,12 @@ def main():
         temp = history
         # print(history)
         if args.item_id is not None:
+            history = []
             for entry in temp:
                 # print(len(temp),len(history))
-                print(entry['Item'],  args.item_id,entry['Item'] not in  args.item_id)
-                if entry['Item'] not in  args.item_id:
-                    history.remove(entry)
+                # print(str(entry['Item']),  args.item_id, str(entry['Item']) not in  args.item_id)
+                if str(entry['Item']) in  args.item_id:
+                    history.append(entry)
 
         if args.num_entries is not None:
             history = history[:int(args.num_entries)]
